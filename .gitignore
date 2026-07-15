@@ -1,0 +1,8 @@
+# Dependencies (used only by the build scripts)
+node_modules/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp

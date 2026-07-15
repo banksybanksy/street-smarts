@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Name SF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Oswald:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="timer" aria-live="polite"><span id="timerLabel">time</span> <strong id="timer">00:00</strong></div>
+
+  <main class="page">
+    <section class="view game-view" id="gameView">
+      <div class="game-shell">
+        <div class="sign-stage">
+          <div class="sign-stack">
+            <div class="street-sign street-sign-small" aria-live="polite">
+              <div class="progress">
+                <strong id="progressPercent">&larr; 0%</strong>
+                <span>named so far</span>
+              </div>
+            </div>
+
+            <div class="street-sign street-sign-large" id="inputSign">
+              <form class="sign-form" id="guessForm" novalidate>
+                <label class="sr-only" for="guessInput">Type a San Francisco street name</label>
+                <input
+                  id="guessInput"
+                  class="sign-input"
+                  type="text"
+                  inputmode="text"
+                  autocomplete="off"
+                  autocapitalize="words"
+                  spellcheck="false"
+                  placeholder="Type a street name"
+                  autofocus
+                >
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <p class="tagline" id="tagline">How well do you know the city?</p>
+
+        <div class="results-strip" id="guessTags" aria-live="polite" aria-label="Correct guesses"></div>
+
+        <div class="session-controls">
+          <div class="clock-picker" aria-label="Round length">
+            <span class="clock-label">round</span>
+            <div class="clock-options" id="clockOptions">
+              <button class="clock-link is-active" type="button" data-clock-mode="countup">open</button>
+              <button class="clock-link" type="button" data-clock-mode="countdown" data-clock-seconds="180">3 min</button>
+              <button class="clock-link" type="button" data-clock-mode="countdown" data-clock-seconds="300">5 min</button>
+            </div>
+          </div>
+          <div class="utility-links">
+            <button class="give-up" id="giveUpButton" type="button">give up</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view results-view is-hidden" id="resultsView" aria-live="polite">
+      <div class="results-card">
+        <div class="results-inner">
+          <header class="results-header">
+            <p class="results-kicker">Name SF report</p>
+            <h1 class="results-headline" id="resultsHeadline">You know the city.</h1>
+            <p class="results-subtitle" id="resultsSubtitle"></p>
+          </header>
+
+          <section class="stats-grid" id="statsGrid" aria-label="Game statistics"></section>
+
+          <section>
+            <h2 class="results-kicker">Named by district</h2>
+            <div class="district-grid" id="districtGrid"></div>
+          </section>
+
+          <button class="play-again" id="playAgainButton" type="button">Play Again</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <p class="credit">A little civic judgment by Damian Perez.</p>
+
+  <script src="./street-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
