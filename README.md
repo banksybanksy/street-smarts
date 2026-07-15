@@ -38,7 +38,3 @@ Then open **http://localhost:8080/name-sf.html**. (Opening the file directly als
 The end-of-round report card, scored by district:
 
 ![Report card grouped by district](docs/screenshots/results.jpg)
-
-It plays on mobile too:
-
-![Mobile game screen](docs/screenshots/mobile-game.jpg)
