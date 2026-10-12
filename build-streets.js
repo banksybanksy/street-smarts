@@ -204,10 +204,6 @@ function parseShape(shapeValue) {
     return shape.coordinates;
   }
 
-  if (shape && shape.type === "LineString" && Array.isArray(shape.coordinates)) {
-    return shape.coordinates;
-  }
-
   if (shape && shape.geometry && Array.isArray(shape.geometry.coordinates)) {
     return shape.geometry.coordinates;
   }
