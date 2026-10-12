@@ -100,8 +100,9 @@ body::after {
   font-weight: 500;
 }
 
+/* The credit scrolls with the page so it never sits on top of the report. */
 .credit {
-  position: fixed;
+  position: absolute;
   left: 24px;
   bottom: 20px;
   z-index: 3;
@@ -137,14 +138,14 @@ body::after {
 }
 
 .sign-stage {
-  width: min(100%, 820px);
+  width: min(100%, var(--sign-width));
   display: grid;
   place-items: center;
   position: relative;
 }
 
 .sign-stack {
-  width: var(--sign-width);
+  width: min(100%, var(--sign-width));
   display: grid;
   gap: 0;
   justify-items: center;
@@ -799,6 +800,10 @@ body::after {
   outline: none;
 }
 
+.results-kicker + .district-grid {
+  margin-top: 12px;
+}
+
 .district-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -811,6 +816,7 @@ body::after {
   background: rgba(255, 255, 255, 0.64);
   padding: 16px;
   display: grid;
+  align-content: start;
   gap: 12px;
 }
 
@@ -908,6 +914,12 @@ body::after {
       16px
       calc(34px + env(safe-area-inset-bottom, 0px))
       16px;
+  }
+
+  /* On small screens the timer scrolls with the page too, so it never sits on
+     top of the report card. */
+  .timer {
+    position: absolute;
   }
 
   .timer {
@@ -1081,10 +1093,6 @@ body::after {
     max-width: none;
     font-size: 0.62rem;
     text-align: center;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
   }
 
   .results-card {

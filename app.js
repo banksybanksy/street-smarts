@@ -42,6 +42,17 @@
     twentieth: "20th"
   };
 
+  const TENS_WORDS = { twenty: 20, thirty: 30, forty: 40 };
+  const UNIT_ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth"];
+  const TENS_ORDINALS = { twentieth: "20th", thirtieth: "30th", fortieth: "40th" };
+
+  // Street types a player might tack onto a guess ("third street", "Geary Blvd").
+  const STREET_TYPE_WORDS = new Set([
+    "street", "st", "avenue", "ave", "av", "boulevard", "blvd", "drive", "dr", "court", "ct",
+    "place", "pl", "way", "lane", "ln", "terrace", "ter", "road", "rd", "highway", "hwy",
+    "circle", "cir", "loop", "row"
+  ]);
+
   const playableStreets = [];
   const streetLookup = new Map();
 
@@ -75,9 +86,25 @@
   let clockMode = "countup";
   let countdownLimitSeconds = 0;
 
+  function ordinalSuffix(number) {
+    const lastTwo = number % 100;
+    if (lastTwo >= 11 && lastTwo <= 13) {
+      return "th";
+    }
+    return ["th", "st", "nd", "rd"][number % 10] || "th";
+  }
+
   function canonicalizeStreetLabel(value) {
     return String(value || "")
       .replace(/\b0+(\d+)(st|nd|rd|th)\b/gi, (_, number, suffix) => String(Number(number)) + suffix.toLowerCase())
+      .replace(
+        /\b(twenty|thirty|forty)[\s-]*(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)\b/gi,
+        (_, tens, unit) => {
+          const number = TENS_WORDS[tens.toLowerCase()] + UNIT_ORDINALS.indexOf(unit.toLowerCase()) + 1;
+          return number + ordinalSuffix(number);
+        }
+      )
+      .replace(/\b(twentieth|thirtieth|fortieth)\b/gi, (match) => TENS_ORDINALS[match.toLowerCase()])
       .replace(
         /\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth)\b/gi,
         (match) => ORDINAL_WORDS[match.toLowerCase()] || match
@@ -86,10 +113,36 @@
 
   function normalizeStreetName(value) {
     return canonicalizeStreetLabel(value)
-      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
-      .replace(/\./g, "")
-      .replace(/\s+/g, " ");
+      .replace(/[.'\u2018\u2019`]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  // Resolves a guess to a lookup key: the name as typed, or the name with a
+  // trailing street type dropped ("3rd street" -> "3rd").
+  function resolveGuessKey(normalized) {
+    if (streetLookup.has(normalized)) {
+      return normalized;
+    }
+    const words = normalized.split(" ");
+    if (words.length > 1 && STREET_TYPE_WORDS.has(words[words.length - 1])) {
+      return words.slice(0, -1).join(" ");
+    }
+    return normalized;
+  }
+
+  function formatPercent(count) {
+    const rawPercent = totalStreets === 0 ? 0 : (count / totalStreets) * 100;
+    if (count === 0) {
+      return "0%";
+    }
+    if (rawPercent < 0.1) {
+      return "<0.1%";
+    }
+    return rawPercent < 10 ? rawPercent.toFixed(1) + "%" : Math.round(rawPercent) + "%";
   }
 
   function formatStreet(entry) {
@@ -149,15 +202,8 @@
 
   function refreshProgress() {
     const rawPercent = totalStreets === 0 ? 0 : (guessedStreets.length / totalStreets) * 100;
-    const arrow = rawPercent > 50 ? "&rarr;" : "&larr;";
-    const percentLabel = guessedStreets.length === 0
-      ? "0%"
-      : rawPercent < 1
-        ? "<1%"
-        : rawPercent < 10
-          ? rawPercent.toFixed(1) + "%"
-          : Math.round(rawPercent) + "%";
-    progressPercent.innerHTML = arrow + " " + percentLabel;
+    const arrow = rawPercent > 50 ? "\u2192" : "\u2190";
+    progressPercent.textContent = arrow + " " + formatPercent(guessedStreets.length);
   }
 
   function setClockMode(nextMode, nextSeconds) {
@@ -185,6 +231,9 @@
   }
 
   function hideTagline() {
+    if (!totalStreets) {
+      return;
+    }
     tagline.classList.add("is-hidden");
   }
 
@@ -280,8 +329,6 @@
     });
 
     const bestDistrict = sortedRankedDistricts[0]?.[0] || "San Francisco";
-    const rawPercent = totalStreets === 0 ? 0 : (guessedStreets.length / totalStreets) * 100;
-    const percentage = rawPercent < 10 ? rawPercent.toFixed(1) : String(Math.round(rawPercent));
     const gaveUpCold = guessedStreets.length === 0 && endReason === "giveup";
     const headline = guessedStreets.length
       ? sortedRankedDistricts.length
@@ -302,7 +349,7 @@
     statsGrid.append(
       createStat("Named", String(guessedStreets.length)),
       createStat("Total", String(totalStreets)),
-      createStat("Score", percentage + "%"),
+      createStat("Score", formatPercent(guessedStreets.length)),
       createStat("Time", formatDuration(elapsedSeconds))
     );
 
@@ -383,7 +430,7 @@
   }
 
   function handleGuess(rawValue) {
-    const normalized = normalizeStreetName(rawValue);
+    const normalized = resolveGuessKey(normalizeStreetName(rawValue));
 
     if (!normalized || gameOver) {
       guessInput.value = "";
@@ -456,6 +503,10 @@
       guessInput.value = "";
     }
   });
+
+  if (!totalStreets) {
+    tagline.textContent = "The street list didn't load. Reload the page to try again.";
+  }
 
   refreshProgress();
   setClockMode("countup");
