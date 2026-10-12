@@ -1,0 +1,9 @@
+{
+  "name": "street-smarts",
+  "private": true,
+  "description": "Name SF: how many San Francisco streets can you name?",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test"
+  }
+}

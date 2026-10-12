@@ -167,29 +167,29 @@ def build_entries(csv_path: Path, overrides: dict) -> list:
     seen = set()
 
     with csv_path.open(newline="", encoding="utf-8-sig") as handle:
-      reader = csv.DictReader(handle)
-      for row in reader:
-        full_name = (row.get("FullStreetName") or "").strip()
-        street_name = (row.get("StreetName") or "").strip()
-        street_type = (row.get("StreetType") or "").strip().upper()
+        reader = csv.DictReader(handle)
+        for row in reader:
+            full_name = (row.get("FullStreetName") or "").strip()
+            street_name = (row.get("StreetName") or "").strip()
+            street_type = (row.get("StreetType") or "").strip().upper()
 
-        if not street_name or not is_playable(full_name, street_type):
-            continue
+            if not street_name or not is_playable(full_name, street_type):
+                continue
 
-        special = SPECIAL_ENTRY_OVERRIDES.get(full_name, {})
-        display_name = special.get("name", titleize_name(street_name))
-        display_suffix = special.get("suffix", SUFFIX_MAP[street_type])
-        full_key = normalize_name(display_name + " " + display_suffix)
-        if full_key in seen:
-            continue
-        seen.add(full_key)
+            special = SPECIAL_ENTRY_OVERRIDES.get(full_name, {})
+            display_name = special.get("name", titleize_name(street_name))
+            display_suffix = special.get("suffix", SUFFIX_MAP[street_type])
+            full_key = normalize_name(display_name + " " + display_suffix)
+            if full_key in seen:
+                continue
+            seen.add(full_key)
 
-        key = normalize_name(street_name)
-        entries.append({
-            "name": display_name,
-            "suffix": display_suffix,
-            "district": overrides.get(key, "Citywide"),
-        })
+            key = normalize_name(street_name)
+            entries.append({
+                "name": display_name,
+                "suffix": display_suffix,
+                "district": overrides.get(key, "Citywide"),
+            })
 
     return entries
 

@@ -1,40 +1,66 @@
 # Name SF
 
-A browser game: how many San Francisco streets can you name? Type street names against the clock and get scored by district.
+How many San Francisco streets can you name? Type them onto a street sign, then see which neighborhoods you actually know.
 
-![The Name SF game screen](docs/screenshots/game.jpg)
+I built it to find out how much of the city I knew by name. It is a static page: no backend, no build step, no dependencies.
 
-## What it does
-
-You type SF street names into a big street sign. Correct ones stick as tags and tick up your progress against all 2,219 streets in the dataset; wrong or repeat guesses shake it off. Play open-ended or on a 3 or 5 minute clock, then get a report card that tells you which district you know best and lists everything you named, grouped by district.
-
-## Why I built it
-
-I wanted to see how much of the city I actually knew by name, and a guessing game was a more fun way to find out than staring at a map. It is a small project and it is meant to be one.
+![A round in progress: the street sign input, named streets as tags, and the round-length picker](docs/screenshots/game.jpg)
 
 ## How it works
 
-It is a static page with no backend and no build step to run it. Guessing is a normalized string match: names are lowercased, punctuation stripped, and spelled-out ordinals like "third" are folded to "3rd," so "Third," "3rd," and "third street" all count. Each street carries a district, which is what the end-of-round report groups and ranks by.
+Each guess is normalized before it is looked up, so the spelling of a street doesn't have to match the data:
 
-The street list itself is prebuilt and committed as `street-data.js`. The scripts in `scripts/` and `build-streets.js` are how it was generated: SF street and right-of-way data becomes the street list, and each street is assigned a district from SF's Analysis Neighborhood boundaries, with a few manual fixes in `scripts/district_overrides.json`. You do not need to run them to play.
+- **Case and punctuation.** `geary`, `GEARY` and `Geary.` are the same guess. Straight, curly and backtick apostrophes are dropped (`O'Farrell`, `O’Farrell`, `ofarrell`), and hyphens count as spaces (`golden-gate`).
+- **Ordinals.** Spelled-out and zero-padded ordinals become numbers: `third`, `03rd` and `3rd` match; so do `twenty-fourth` and `24th`.
+- **Street types.** A trailing type is optional and can be abbreviated: `Geary`, `Geary Blvd` and `geary boulevard` all match Geary Boulevard.
 
-## Data sources
+A street counts once. Guessing it again under another spelling (`3rd`, then `Third Avenue`) shakes the sign as a miss. One guess can name more than one street when they share a name: `2nd` names both 2nd Avenue and 2nd Drive.
 
-Street names and their district assignments are derived from San Francisco open data ([DataSF](https://datasf.org/opendata/)): the street/right-of-way listing and the Analysis Neighborhood boundaries. The processed result is baked into `street-data.js`, so the game runs offline.
+Rounds are open-ended or 3 or 5 minutes; the clock starts on the first guess. When the round ends the report groups everything you named by district, most-named district first, and headlines the one you know best.
 
-## Running it locally
+![The end-of-round report, with streets grouped by district](docs/screenshots/results.jpg)
 
-There is nothing to build. Serve the folder with any static server and open `name-sf.html`:
+The matching and grouping logic lives in `matching.js`, separate from the DOM code in `app.js`, so it can be tested under Node.
+
+## Running it
+
+Serve the folder with any static server and open `name-sf.html`:
 
 ```bash
-cd street-smarts
 python3 -m http.server 8080
+# then open http://localhost:8080/name-sf.html
 ```
 
-Then open **http://localhost:8080/name-sf.html**. (Opening the file directly also mostly works; a static server just avoids browser file-access quirks.)
+Run the tests (Node 20 or later, nothing to install):
 
-## Screenshots
+```bash
+npm test
+```
 
-The end-of-round report card, scored by district:
+They cover the normalization rules above, duplicate guesses and district grouping, and check that every street in the committed data can be guessed by its own name. GitHub Actions runs them on every push to `main` and on every pull request.
 
-![Report card grouped by district](docs/screenshots/results.jpg)
+## Data
+
+The game plays against `street-data.js`: 2,219 streets, each with a district. It was produced by `build-streets.js` (`node build-streets.js`, no dependencies), which:
+
+1. Downloads San Francisco's street names list from DataSF (dataset `6d9h-4u5v`).
+2. Keeps conventional street types (Street, Avenue, Boulevard, Drive, Court, Place, Way, Lane, Terrace, Road, Highway and a few others), drops alleys, walks, paths, stairways and plazas, and keeps **one entry per street name**.
+3. Looks each street up in a DataSF street centerline dataset and the DataSF neighborhoods dataset (`pty2-tcw4`) to assign a neighborhood, falling back to OpenStreetMap's Nominatim geocoder when DataSF has no match.
+4. Writes `streets.json` and `street-data.js` (same content), and lists the 59 streets it could not place in `streets-skipped.json`.
+
+After that build, 65 district names in `street-data.js` were corrected by hand for typos in the source data (for example `Lower Pacfic Heights`), so `street-data.js` and `streets.json` now differ in those rows only.
+
+Known limits of the data:
+
+- Because the build keeps one entry per name, some well-known streets are missing behind a less-known namesake: 2nd, 3rd and 4th Street (the Avenues are in), Kearny Street (Kearny Lane is in) and Stanyan Street (Stanyan Boulevard is in). 1st Street is present. Names with no street type, such as Broadway and The Embarcadero, are not included.
+- District names are whatever the sources call them, so neighboring names overlap (`Inner Mission`, `Mission Dolores`, `Mission District`) and some are very local (`Lake`).
+
+`scripts/build_street_data.py` and `scripts/district_overrides.json` are a separate, older pipeline: they build the list from a street CSV and assign districts from the overrides file, writing `Citywide` where there is none. The committed data was not produced by it; `matching.js` still handles its `Citywide` districts and `-` (no street type) suffix. The three `data_sf_*.geojson` files are truncated stubs that neither script reads.
+
+## Status
+
+Finished and playable. The open items are the data gaps above.
+
+## License
+
+MIT. See `LICENSE`.
