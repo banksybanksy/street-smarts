@@ -27,7 +27,7 @@ Street names and their district assignments are derived from San Francisco open 
 There is nothing to build. Serve the folder with any static server and open `name-sf.html`:
 
 ```bash
-cd NameSF
+cd street-smarts
 python3 -m http.server 8080
 ```
 

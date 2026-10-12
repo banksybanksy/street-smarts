@@ -6,3 +6,6 @@ node_modules/
 .vscode/
 .idea/
 *.swp
+
+# Python bytecode
+__pycache__/
